@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Flight Search - TravelGo{% endblock %}
+{% block content %}
+<div class="container mx-auto px-6 py-12">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Search for Flights</h1>
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+        <form method="POST" action="{{ url_for('flight_search') }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="from-airport" class="block text-gray-700 font-semibold mb-2">From</label>
+                    <input type="text" id="from-airport" name="from_airport" placeholder="e.g., JFK" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="to-airport" class="block text-gray-700 font-semibold mb-2">To</label>
+                    <input type="text" id="to-airport" name="to_airport" placeholder="e.g., LAX" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                    <label for="departure-date" class="block text-gray-700 font-semibold mb-2">Departure Date</label>
+                    <input type="date" id="departure-date" name="departure_date" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="return-date" class="block text-gray-700 font-semibold mb-2">Return Date (Optional)</label>
+                    <input type="date" id="return-date" name="return_date" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300">Search Flights</button>
+            </div>
+        </form>
+    </div>
+
+    {% if flights %}
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Available Flights</h2>
+        <div class="space-y-4 max-w-4xl mx-auto">
+            {% for flight in flights %}
+            <div class="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-semibold text-red-700">{{ flight.airline }} ({{ flight.number }})</h3>
+                    <p class="text-gray-600">{{ flight.origin }} to {{ flight.destination }}</p>
+                    <p class="text-sm text-gray-500">Departs: {{ flight.departure }} | Arrives: {{ flight.arrival }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-gray-800">${{ flight.price }}</p>
+                    <a href="{{ url_for('select_flight_seats', flight_id=flight.id, departure_date=flight.departure_date.strftime('%Y-%m-%d')) }}" class="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Select Seats</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% elif request.method == 'POST' %}
+    <div class="text-center mt-12">
+        <p class="text-gray-600 text-lg">No flights found for the selected route. Please try another search.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Hotel Booking - {{ hotel.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-8">
+    <h1 class="text-3xl font-bold">Confirm Your Stay</h1>
+    
+    <div class="mt-8 bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+        <!-- Hotel Details -->
+        <div class="border-b pb-4 mb-6">
+            <h2 class="text-2xl font-semibold text-purple-700">{{ hotel.name }}</h2>
+            <p class="text-gray-600">{{ hotel.location }}</p>
+            <p class="text-lg font-bold text-gray-800 mt-2">${{ "%.2f"|format(hotel.price_per_night) }} / night</p>
+        </div>
+
+        <!-- Booking Summary -->
+        <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold">Summary</h3>
+            <div class="mt-4 space-y-2">
+                <p><strong>Hotel:</strong> <span>{{ hotel.name }}</span></p>
+                <p><strong>Check-in Date:</strong> <span id="summary-date">{{ checkin_date }}</span></p>
+                <p class="mt-4 text-2xl font-bold">Total: $<span id="total-price">{{ "%.2f"|format(hotel.price_per_night) }}</span></p>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="mt-8">
+            <h3 class="text-xl font-semibold mb-4">Mode of Payment</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="payment" class="form-radio" checked>
+                    <span class="ml-3 text-gray-700">UPI / Net Banking</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Confirmation Button -->
+        <div class="mt-8">
+            <button id="proceed-btn" class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700">
+                Confirm Booking
+            </button>
+        </div>
+        <div id="booking-message" class="hidden mt-4 text-center"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const proceedBtn = document.getElementById('proceed-btn');
+    const messageDiv = document.getElementById('booking-message');
+
+    proceedBtn.addEventListener('click', async () => {
+        const bookingData = {
+            service_id: "{{ hotel.id }}",
+            type: "hotel",
+            date: "{{ checkin_date }}"
+        };
+
+        proceedBtn.disabled = true;
+        proceedBtn.textContent = 'Processing...';
+
+        const response = await fetch("{{ url_for('create_booking') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingData)
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+            messageDiv.className = 'text-green-600 font-semibold';
+            messageDiv.textContent = `Booking successful! ID: ${result.booking_id}. Redirecting...`;
+            setTimeout(() => window.location.href = "{{ url_for('dashboard') }}", 3000);
+        } else {
+            messageDiv.className = 'text-red-600 font-semibold';
+            messageDiv.textContent = result.message || 'An error occurred.';
+            proceedBtn.disabled = false;
+            proceedBtn.textContent = 'Confirm Booking';
+        }
+        messageDiv.classList.remove('hidden');
+    });
+});
+</script>
+{% endblock %}

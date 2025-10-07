@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Search Hotels{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-8">
+    <h1 class="text-3xl font-bold mb-6">Find Your Perfect Hotel</h1>
+
+    <form method="GET" action="{{ url_for('search_hotels') }}" class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <div class="flex flex-wrap -mx-3 mb-2">
+            <div class="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+                <label class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" for="location">
+                    Location
+                </label>
+                <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="location" name="location" type="text" placeholder="e.g., New York" value="{{ request.args.get('location', '') }}">
+            </div>
+            <div class="w-full md:w-1/2 px-3">
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline mt-6">
+                    Search Hotels
+                </button>
+            </div>
+        </div>
+    </form>
+
+    {% if hotels %}
+    <h2 class="text-2xl font-bold mb-4">Available Hotels</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for hotel in hotels %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-6">
+                <h3 class="text-xl font-bold mb-2">{{ hotel.name }}</h3>
+                <p class="text-gray-700 mb-2">{{ hotel.location }}</p>
+                <p class="text-gray-900 font-bold text-lg mb-4">${{ "%.2f"|format(hotel.price_per_night) }} / night</p>
+                <p class="text-sm text-gray-600 mb-4">{{ hotel.availability }} rooms available</p>
+                <a href="{{ url_for('book_hotel', hotel_id=hotel.id) }}" class="block w-full text-center bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">
+                    Book Now
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif request.args.get('location') %}
+        <p class="text-center text-gray-500 mt-8">No hotels found for the specified location.</p>
+    {% endif %}
+</div>
+{% endblock %}

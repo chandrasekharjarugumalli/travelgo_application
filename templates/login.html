@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Login - TravelGo{% endblock %}
+{% block content %}
+<div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md mx-auto my-12">
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Login to TravelGo</h2>
+    <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <strong class="font-bold">Error:</strong>
+        <span class="block sm:inline">Invalid credentials.</span>
+    </div>
+    <form id="loginForm">
+        <div class="mb-4">
+            <label for="login-email" class="block text-gray-700 text-sm font-bold mb-2">Email Address</label>
+            <input type="email" id="login-email" name="email" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="you@example.com" required>
+        </div>
+        <div class="mb-6">
+            <label for="login-password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+            <input type="password" id="login-password" name="password" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="******************" required>
+        </div>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full focus:outline-none focus:shadow-outline" type="submit">Sign In</button>
+    </form>
+    <p class="text-center text-gray-600 text-sm mt-6">Don't have an account? <a href="{{ url_for('register_page') }}" class="font-bold text-blue-600 hover:text-blue-800">Sign Up</a></p>
+</div>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorMessageDiv = document.getElementById('error-message');
+        errorMessageDiv.classList.add('hidden');
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch("{{ url_for('login') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                window.location.href = "{{ url_for('home') }}";
+            } else {
+                const result = await response.json();
+                errorMessageDiv.querySelector('span').textContent = result.message || 'Invalid email or password.';
+                errorMessageDiv.classList.remove('hidden');
+            }
+        } catch (error) {
+            errorMessageDiv.querySelector('span').textContent = 'A network error occurred. Please try again.';
+            errorMessageDiv.classList.remove('hidden');
+            console.error('Login fetch error:', error);
+        }
+    });
+</script>
+{% endblock %}

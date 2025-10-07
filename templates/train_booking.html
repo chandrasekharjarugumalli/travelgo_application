@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Book Train Tickets - {{ train.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-8">
+    <h1 class="text-3xl font-bold">Book Your Train Journey</h1>
+    
+    <div class="mt-8 bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto">
+        <!-- Train Details -->
+        <div class="border-b pb-4 mb-6">
+            <h2 class="text-2xl font-semibold text-green-700">{{ train.name }}</h2>
+            <p class="text-gray-600">{{ train.origin }} to {{ train.destination }}</p>
+            <p class="text-sm text-gray-500">Departs: {{ train.departure }} | Arrives: {{ train.arrival }}</p>
+        </div>
+
+        <!-- Booking Form -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-xl font-semibold mb-4">Select Your Options</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="travel-class" class="block text-gray-700 font-semibold mb-2">Travel Class</label>
+                        <select id="travel-class" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500">
+                            <option value="1.0" data-class-name="Sleeper">Sleeper Class - ${{ "%.2f"|format(train.price) }}</option>
+                        <option value="1.5" data-class-name="AC Chair">AC Chair Car - ${{ "%.2f"|format(train.price|float * 1.5) }}</option>
+                        <option value="2.5" data-class-name="First Class">First Class AC - ${{ "%.2f"|format(train.price|float * 2.5) }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ticket-quantity" class="block text-gray-700 font-semibold mb-2">Number of Tickets</label>
+                        <input type="number" id="ticket-quantity" value="1" min="1" max="10" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Summary -->
+            <div class="bg-gray-50 p-6 rounded-lg">
+                <h3 class="text-xl font-semibold">Summary</h3>
+                <div id="summary" class="mt-4 space-y-2">
+                    <p><strong>Class:</strong> <span id="summary-class">Sleeper</span></p>
+                    <p><strong>Tickets:</strong> <span id="summary-quantity">1</span></p>
+                    <p class="mt-4 text-2xl font-bold">Total: $<span id="total-price">0.00</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="mt-8">
+            <h3 class="text-xl font-semibold mb-4">Mode of Payment</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="payment" class="form-radio" checked>
+                    <span class="ml-3 text-gray-700">UPI / Net Banking</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Confirmation Button -->
+        <div class="mt-8">
+            <button id="proceed-btn" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400" disabled>
+                Confirm Booking
+            </button>
+        </div>
+        <div id="booking-message" class="hidden mt-4 text-center"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const travelClassEl = document.getElementById('travel-class');
+    const quantityEl = document.getElementById('ticket-quantity');
+    const summaryClassEl = document.getElementById('summary-class');
+    const summaryQuantityEl = document.getElementById('summary-quantity');
+    const totalPriceEl = document.getElementById('total-price');
+    const proceedBtn = document.getElementById('proceed-btn');
+    const messageDiv = document.getElementById('booking-message');
+
+    const basePrice = parseFloat('{{ train.price }}');
+
+    function updateSummary() {
+        const quantity = parseInt(quantityEl.value);
+        const priceMultiplier = parseFloat(travelClassEl.value);
+        const selectedOption = travelClassEl.options[travelClassEl.selectedIndex];
+        const className = selectedOption.dataset.className;
+
+        const totalPrice = basePrice * priceMultiplier * quantity;
+
+        summaryClassEl.textContent = className;
+        summaryQuantityEl.textContent = quantity;
+        totalPriceEl.textContent = totalPrice.toFixed(2);
+
+        if (totalPrice > 0) {
+            proceedBtn.disabled = false;
+        } else {
+            proceedBtn.disabled = true;
+        }
+    }
+
+    travelClassEl.addEventListener('change', updateSummary);
+    quantityEl.addEventListener('input', updateSummary);
+
+    proceedBtn.addEventListener('click', async () => {
+        const selectedOption = travelClassEl.options[travelClassEl.selectedIndex];
+        const bookingData = {
+            service_id: "{{ train.id }}",
+            type: "train",
+            class: selectedOption.dataset.className,
+            quantity: parseInt(quantityEl.value),
+            date: "{{ travel_date or '' }}"
+        };
+
+        proceedBtn.disabled = true;
+        proceedBtn.textContent = 'Processing...';
+
+        const response = await fetch("{{ url_for('create_booking') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingData)
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+            messageDiv.className = 'text-green-600 font-semibold';
+            messageDiv.textContent = `Booking successful! ID: ${result.booking_id}. Redirecting...`;
+            setTimeout(() => window.location.href = "{{ url_for('dashboard') }}", 3000);
+        } else {
+            messageDiv.className = 'text-red-600 font-semibold';
+            messageDiv.textContent = result.message || 'An error occurred.';
+            proceedBtn.disabled = false;
+            proceedBtn.textContent = 'Confirm Booking';
+        }
+        messageDiv.classList.remove('hidden');
+    });
+
+    // Initial calculation
+    updateSummary();
+});
+</script>
+{% endblock %}
